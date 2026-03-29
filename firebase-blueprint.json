@@ -1,39 +1,53 @@
 {
   "entities": {
-    "Room": {
-      "title": "Room",
-      "description": "A chat room with password protection and cleanup status.",
+    "UserProfile": {
+      "title": "User Profile",
+      "description": "Stores user information and presence.",
       "type": "object",
       "properties": {
-        "name": { "type": "string", "description": "Unique room ID/name." },
-        "passwordHash": { "type": "string", "description": "SHA-256 hashed password." },
-        "users": { "type": "array", "items": { "type": "string" }, "description": "List of user IDs in the room." },
-        "finishStatus": { "type": "object", "description": "Map of user ID to boolean status for finishing the chat." },
-        "lastActivity": { "type": "string", "format": "date-time", "description": "Timestamp of the last activity in the room." },
-        "typing": { "type": "object", "description": "Map of user ID to typing status." }
+        "uid": { "type": "string" },
+        "username": { "type": "string" },
+        "displayName": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "email": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "lastSeen": { "type": "string", "format": "date-time" }
       },
-      "required": ["name", "passwordHash", "lastActivity"]
+      "required": ["uid", "username", "displayName", "createdAt"]
+    },
+    "Chat": {
+      "title": "Chat",
+      "description": "A conversation between two or more users.",
+      "type": "object",
+      "properties": {
+        "type": { "type": "string", "enum": ["dm", "group"] },
+        "participants": { "type": "array", "items": { "type": "string" } },
+        "name": { "type": "string" },
+        "lastMessage": { "type": "string" },
+        "updatedAt": { "type": "string", "format": "date-time" },
+        "createdBy": { "type": "string" },
+        "lastRead": { "type": "object", "description": "Map of user UIDs to their last read timestamp." },
+        "typing": { "type": "object", "description": "Map of user UIDs to their typing status timestamp." }
+      },
+      "required": ["type", "participants", "updatedAt"]
     },
     "Message": {
       "title": "Message",
-      "description": "A single chat message.",
+      "description": "A single message within a chat.",
       "type": "object",
       "properties": {
-        "text": { "type": "string", "description": "The message content." },
-        "timestamp": { "type": "string", "format": "date-time", "description": "When the message was sent." },
-        "userId": { "type": "string", "description": "The ID of the user who sent the message." }
+        "text": { "type": "string" },
+        "senderId": { "type": "string" },
+        "senderName": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" }
       },
-      "required": ["text", "timestamp", "userId"]
+      "required": ["text", "senderId", "timestamp"]
     }
   },
   "firestore": {
-    "/rooms/{roomId}": {
-      "schema": "Room",
-      "description": "Collection of chat rooms."
-    },
-    "/rooms/{roomId}/messages/{messageId}": {
-      "schema": "Message",
-      "description": "Subcollection of messages for a specific room."
-    }
+    "/users/{uid}": { "schema": "UserProfile", "description": "User profiles" },
+    "/usernames/{username}": { "schema": { "type": "object", "properties": { "uid": { "type": "string" } } }, "description": "Username uniqueness mapping" },
+    "/chats/{chatId}": { "schema": "Chat", "description": "Chat conversations" },
+    "/chats/{chatId}/messages/{messageId}": { "schema": "Message", "description": "Messages within a chat" }
   }
 }
