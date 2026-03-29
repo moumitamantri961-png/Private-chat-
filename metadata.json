@@ -1,0 +1,5 @@
+{
+  "name": "GlassChat",
+  "description": "A modern, secure, and anonymous real-time chat application with self-destructing rooms.",
+  "requestFramePermissions": []
+}

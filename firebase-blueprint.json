@@ -1,0 +1,39 @@
+{
+  "entities": {
+    "Room": {
+      "title": "Room",
+      "description": "A chat room with password protection and cleanup status.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "Unique room ID/name." },
+        "passwordHash": { "type": "string", "description": "SHA-256 hashed password." },
+        "users": { "type": "array", "items": { "type": "string" }, "description": "List of user IDs in the room." },
+        "finishStatus": { "type": "object", "description": "Map of user ID to boolean status for finishing the chat." },
+        "lastActivity": { "type": "string", "format": "date-time", "description": "Timestamp of the last activity in the room." },
+        "typing": { "type": "object", "description": "Map of user ID to typing status." }
+      },
+      "required": ["name", "passwordHash", "lastActivity"]
+    },
+    "Message": {
+      "title": "Message",
+      "description": "A single chat message.",
+      "type": "object",
+      "properties": {
+        "text": { "type": "string", "description": "The message content." },
+        "timestamp": { "type": "string", "format": "date-time", "description": "When the message was sent." },
+        "userId": { "type": "string", "description": "The ID of the user who sent the message." }
+      },
+      "required": ["text", "timestamp", "userId"]
+    }
+  },
+  "firestore": {
+    "/rooms/{roomId}": {
+      "schema": "Room",
+      "description": "Collection of chat rooms."
+    },
+    "/rooms/{roomId}/messages/{messageId}": {
+      "schema": "Message",
+      "description": "Subcollection of messages for a specific room."
+    }
+  }
+}

@@ -1,0 +1,78 @@
+// ===============================================================
+// Assumed Data Model
+// ===============================================================
+//
+// Collection: rooms
+// Document ID: roomId (string)
+// Fields:
+//   - name: string (required) - Unique room name
+//   - passwordHash: string (required) - SHA-256 hashed password
+//   - users: list (optional) - List of user IDs in the room
+//   - finishStatus: map (optional) - Map of user ID to boolean status
+//   - lastActivity: timestamp (required) - Last activity timestamp
+//   - typing: map (optional) - Map of user ID to boolean typing status
+//
+// Subcollection: messages (under rooms/{roomId})
+// Document ID: messageId (string)
+// Fields:
+//   - text: string (required) - Message content
+//   - timestamp: timestamp (required) - Message timestamp
+//   - userId: string (required) - Sender's user ID
+//
+// ===============================================================
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isValidRoom(data) {
+      return data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
+             data.passwordHash is string && data.passwordHash.size() == 64 &&
+             data.lastActivity is timestamp;
+    }
+
+    function isValidMessage(data) {
+      return data.text is string && data.text.size() > 0 && data.text.size() < 2000 &&
+             data.timestamp is timestamp &&
+             data.userId == request.auth.uid;
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /rooms/{roomId} {
+      // Allow read if authenticated
+      allow read: if isAuthenticated();
+      
+      // Allow create if authenticated, room doesn't exist, and data is valid
+      allow create: if isAuthenticated() && 
+                      !exists(/databases/$(database)/documents/rooms/$(roomId)) &&
+                      isValidRoom(request.resource.data) &&
+                      request.resource.data.name == roomId;
+      
+      // Allow update if authenticated and data is valid
+      allow update: if isAuthenticated() && 
+                      isValidRoom(request.resource.data);
+      
+      // Allow delete if authenticated (for the "Finish Chat" logic)
+      allow delete: if isAuthenticated();
+
+      match /messages/{messageId} {
+        // Allow read if authenticated
+        allow read: if isAuthenticated();
+        
+        // Allow create if authenticated and message is valid
+        allow create: if isAuthenticated() && 
+                        isValidMessage(request.resource.data);
+      }
+    }
+  }
+}
